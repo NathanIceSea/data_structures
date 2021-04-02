@@ -31,5 +31,12 @@
     "code-runner.executorMap": {
         "c": "cd $dir && gcc -std=c11 -g '$fileName' -o '$workspaceRoot/build/$fileNameWithoutExt' && '$workspaceRoot/build/$fileNameWithoutExt'",
         "cpp": "cd $dir && g++ -std=c++17 -g '$fileName' -o '$workspaceRoot/build/$fileNameWithoutExt' && '$workspaceRoot/build/$fileNameWithoutExt'",
+    },
+    "files.associations": {
+        "vector": "cpp",
+        "*.ipp": "cpp",
+        "*.tcc": "cpp",
+        "functional": "cpp",
+        "random": "cpp"
     }
 }

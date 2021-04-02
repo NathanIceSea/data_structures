@@ -43,58 +43,55 @@ OS != \
 	elif [ '$(os)' = linux ]; then \
 		echo linux; \
 	else \
-		echo unknown; \
+		echo UNKNOWN_OS; \
 	fi
-# 以 /src 为坐标获取工作目录
+# 通过 src 的相对位置获取工作空间目录 {/path/to}/src
 CUR_DIR = $(shell pwd)
 CWD = $(shell echo $(CUR_DIR) | sed 's/\/src.*//g')
-
-# 输出到 build 路径
-BUILD_PATH = $(CWD)/build
-# 从 path 变量获取工程路径作为源文件所在路径
-PROJSRC_PATH = $(subst \,/,$(path))
-# 设置 VPATH 自动推导依赖关系的路径，用于 inplace 目标 main：在当前目录产生目标文件和可执行文件
-VPATH = $(PROJSRC_PATH)
-# 获取源文件列表，.c 和 .cpp 文件；原为 -type f \( -name '*.c' -o -name '*.cpp' \)
-SOURCES := $(shell find $(PROJSRC_PATH) -maxdepth 1 -type f -name '*$(SUFFIX)' -exec basename {} \;)
-# 将源文件列表转换为 .o 目标文件列表；原为 $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
+# 获取工作空间下的 build 目录
+BUILD_DIR = $(CWD)/build
+# 从 path 变量获取子工程源文件所在路径
+PROJSRC_DIR = $(subst \,/,$(path))
+# 获取源文件列表，.c/.cpp 文件
+SOURCES := $(shell find $(PROJSRC_DIR) -maxdepth 1 -type f -name '*$(SUFFIX)' -exec basename {} \;)
+# 将源文件列表转换为 .o 目标文件列表
 OBJECTS := $(patsubst %$(SUFFIX),%.o,$(SOURCES))
+# 将源文件列表转换为 build/%.d 依赖推导 fragment（以支持对 .h 的依赖推导），see https://stackoverflow.com/questions/2394609/makefile-header-dependencies
+DEPENDS := $(patsubst %.cpp,$(BUILD_DIR)/%.d,$(SOURCES))
 
 
 # 通过 ".OS_工程目录" 作为名称的标志文件来判断是否仍在编译同一个工程，否则就要删除所有中间和目标文件防止 make 编译出错
-PROJNAME = $(shell echo $(PROJSRC_PATH) | sed 's/.*\///')
-PROJFLAG_PATH = $(BUILD_PATH)/.$(OS)_$(PROJNAME)
-# BUILD_PATH 下没有 PROJNAME 文件则说明第一次编译该工程，必须先清理
+PROJNAME = $(shell echo $(PROJSRC_DIR) | sed 's/.*\///')
+PROJFLAG_PATH = $(BUILD_DIR)/.$(OS)_$(PROJNAME)
+# BUILD_DIR 下没有 PROJNAME 文件则说明第一次编译该工程，必须先清理
 EXEC != \
 	if [ '$(wildcard $(PROJFLAG_PATH))' = '' ]; then \
-		echo 1; \
-		find $(BUILD_PATH) -type f -not -name ".git*" -delete; \
-		cd $(BUILD_PATH) && touch .$(OS)_$(PROJNAME); \
-		echo 0; \
+		find $(BUILD_DIR) -type f -not -name ".git*" -delete; \
+		cd $(BUILD_DIR) && touch .$(OS)_$(PROJNAME); \
 	fi
 
 
-# 默认目标 build/main.exe
-# /path/to/build/main.exe: /path/to/build/main.o /path/to/build/dep.o ...
-$(BUILD_PATH)/main: $(patsubst %, $(BUILD_PATH)/%, $(OBJECTS))
+# 默认目标 build/main
+# /path/to/build/main: /path/to/build/main.o /path/to/build/dep.o ...
+$(BUILD_DIR)/main: $(patsubst %, $(BUILD_DIR)/%, $(OBJECTS))
 	$(CC) $(FLAGS) -o $@ $^
-# 制作 .o 中间文件，在规则中使用 % 通配
-$(BUILD_PATH)/%.o: $(PROJSRC_PATH)/%$(SUFFIX)
-	$(CC) $(FLAGS) -o $@ -c $< -I $(PROJSRC_PATH)
+
+# 将依赖推导 fragment (%.o: %.h %.c[pp]) 导入 Makefile
+-include $(DEPENDS)
+# 制作 .o 中间文件和 .d 依赖推导 fragment 文件
+$(BUILD_DIR)/%.o: $(PROJSRC_DIR)/%$(SUFFIX)
+	$(CC) $(FLAGS) -MMD -o $@ -c $< -I $(PROJSRC_DIR)
 
 
-# inplace main 目标
-main: $(OBJECTS)
-
-
-.PHONY: debug clean
-debug:
+.PHONY: diag clean
+diag:
 	@echo CC, FLAGS, SUFFIX, OS: $(CC), $(FLAGS), $(SUFFIX), $(OS)
-	@echo CUR_DIR, CWD, BUILD_PATH, PROJSRC_PATH: $(CUR_DIR), $(CWD), $(BUILD_PATH), $(PROJSRC_PATH)
+	@echo CUR_DIR, CWD, BUILD_DIR, PROJSRC_DIR: $(CUR_DIR), $(CWD), $(BUILD_DIR), $(PROJSRC_DIR)
 	@echo PROJNAME, PROJFLAG_PATH, EXEC: $(PROJNAME), $(PROJFLAG_PATH), $(EXEC)
 	@echo SOURCES: $(SOURCES)
 	@echo OBJECTS: $(OBJECTS)
+	@echo DEPENDS: $(DEPENDS)
 
 clean:
-	find $(BUILD_PATH) -type f -not -name ".git*" -delete;
+	find $(BUILD_DIR) -type f -not -name ".git*" -delete;
 	cd $(CWD) && $(RM) main *.o *.exe;
