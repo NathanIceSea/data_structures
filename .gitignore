@@ -1,0 +1,10 @@
+build/*
+!build/.gitkeep
+
+main
+main.exe
+*.[oa]
+*~
+tempCodeRunnerFile*
+
+resource/*

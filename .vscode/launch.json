@@ -1,0 +1,69 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C Project Launch (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "program": "",
+            "stopAtEntry": true,
+            "windows": {
+                "miDebuggerPath": "C:/ENV/msys64/mingw64/bin/gdb.exe",
+                "program": "${workspaceFolder}/build/main.exe",
+                "args": [],
+                "environment": [],
+                // 为了正常显示输入输出，必须设置为 true
+                "externalConsole": true,
+            },
+            "linux": {
+                "miDebuggerPath": "gdb",
+                "program": "${workspaceFolder}/build/main",
+                "args": [],
+                "environment": [],
+                // 设置为 false，warning: GDB: Failed to set controlling terminal 直接忽略即可，true false 皆同
+                "externalConsole": false,
+            },
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                }
+            ],
+            "preLaunchTask": "Make C Project"
+        },
+        {
+            "name": "C++ Project Launch (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "program": "",
+            "stopAtEntry": true,
+            "windows": {
+                "miDebuggerPath": "C:/ENV/msys64/mingw64/bin/gdb.exe",
+                "program": "${workspaceFolder}/build/main.exe",
+                "args": [],
+                "environment": [],
+                "externalConsole": true,
+            },
+            "linux": {
+                "miDebuggerPath": "gdb",
+                "program": "${workspaceFolder}/build/main",
+                "args": [],
+                "environment": [],
+                "externalConsole": false,
+            },
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                }
+            ],
+            "preLaunchTask": "Make C++ Project"
+        }
+    ]
+}
